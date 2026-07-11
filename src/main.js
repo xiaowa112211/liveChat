@@ -46,7 +46,7 @@ document.querySelector("#app").innerHTML = `
           <span class="status-online">● Online</span>
         </div>
       </div>
-      <button id="logout-btn">ထွက်ရန်</button>
+      <button id="logout-btn">❌</button>
     </div>
     
     <div id="chat-box">
