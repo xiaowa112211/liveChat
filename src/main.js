@@ -22,7 +22,7 @@ document.querySelector("#app").innerHTML = `
 <div class="chat-app-container">
   
   <div id="auth-screen">
-    <div class="brand-logo">💬</div>
+    <div class="brand-logo">💦</div>
     <h1>KoKo And Nge</h1>
     <p class="subtitle">စကားပြောခန်းထဲဝင်ရန် အကောင့်ဝင်ပါ</p>
     
@@ -121,10 +121,8 @@ function startChatRoom(user) {
       let timeString = "";
       if (data.createdAt) {
         const date = data.createdAt.toDate();
-        // 11:30 AM ပုံစံမျိုး ပြောင်းလဲခြင်း
         timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       } else {
-        // Firebase ထဲ မရောက်ခင် ခေတ္တပြသရန် လက်ရှိအချိန်ယူခြင်း
         timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
       
