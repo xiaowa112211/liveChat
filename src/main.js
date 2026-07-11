@@ -23,7 +23,7 @@ document.querySelector("#app").innerHTML = `
   
   <div id="auth-screen">
     <div class="brand-logo">💬</div>
-    <h1>Public Chat</h1>
+    <h1>Nay And Nge Chat</h1>
     <p class="subtitle">စကားပြောခန်းထဲဝင်ရန် အကောင့်ဝင်ပါ</p>
     
     <div class="input-group">
