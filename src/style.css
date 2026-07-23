@@ -151,6 +151,7 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  font-size: 18px;
 }
 
 .user-status {
@@ -169,10 +170,16 @@ body {
   font-weight: 600;
 }
 
-#logout-btn {
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn, #logout-btn {
   background: #f1f5f9 !important;
   color: #475569 !important;
-  padding: 8px 16px !important;
+  padding: 8px 12px !important;
   font-size: 13px !important;
   font-weight: 600 !important;
   border-radius: 12px !important;
@@ -181,7 +188,7 @@ body {
   transition: background 0.2s;
 }
 
-#logout-btn:hover { background: #e2e8f0 !important; }
+.icon-btn:hover, #logout-btn:hover { background: #e2e8f0 !important; }
 
 #chat-box {
   flex-grow: 1;
@@ -200,6 +207,7 @@ body {
   display: flex;
   flex-direction: column;
   width: 100%;
+  position: relative;
 }
 
 .message-bubble {
@@ -241,23 +249,53 @@ body {
   font-weight: 500;
 }
 
-/* --- စာပို့ချိန်အတွက် CSS Style --- */
+/* --- Message Meta (Time & Seen Status) --- */
+.message-meta {
+  display: flex;
+  align-items: center;
+  margin-top: 3px;
+}
+
 .message-time {
   font-size: 11px;
   color: #94a3b8;
-  margin-top: 3px;
   font-weight: 400;
 }
 
-.message-row.me .message-time {
-  margin-right: 6px;
+.read-status {
+  font-size: 11px;
+  color: #94a3b8;
 }
 
-.message-row.others .message-time {
-  margin-left: 6px;
+.read-status.seen {
+  color: #0084ff;
+  font-weight: bold;
 }
-/* ---------------------------------- */
 
+.message-row.me .message-meta { margin-right: 6px; }
+.message-row.others .message-meta { margin-left: 6px; }
+
+/* --- Deleted Message & Delete Button --- */
+.deleted-msg {
+  opacity: 0.7;
+  font-style: italic;
+  background-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+.del-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  margin-bottom: 4px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.del-btn:hover { opacity: 1; }
+
+/* --- Input Area --- */
 .input-area {
   display: flex !important;
   align-items: center !important;
@@ -301,3 +339,64 @@ body {
 
 #send-btn:hover { background-color: #0066cc !important; }
 #send-btn:active { transform: scale(0.95); }
+
+/* --- Dark Mode Styles --- */
+html.dark-mode body {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f8fafc;
+}
+
+html.dark-mode .chat-app-container {
+  background: #1e293b;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+}
+
+html.dark-mode #auth-screen h1 { color: #f8fafc; }
+html.dark-mode .subtitle { color: #94a3b8; }
+
+html.dark-mode .input-group input {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+html.dark-mode .chat-header {
+  background: #1e293b;
+  border-bottom-color: #334155;
+}
+
+html.dark-mode #user-info { color: #f8fafc; }
+html.dark-mode #chat-box { background-color: #0f172a; }
+
+html.dark-mode .message-row.others .message-bubble {
+  background-color: #334155;
+  color: #f8fafc;
+  border-color: #475569;
+}
+
+html.dark-mode .input-area {
+  background: #1e293b;
+  border-top-color: #334155;
+}
+
+html.dark-mode #chat-input {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html.dark-mode .icon-btn,
+html.dark-mode #logout-btn {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html.dark-mode .icon-btn:hover,
+html.dark-mode #logout-btn:hover {
+  background: #475569 !important;
+}
+
+html.dark-mode .deleted-msg {
+  background-color: #334155 !important;
+  color: #94a3b8 !important;
+}
