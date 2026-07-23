@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + JS</title>
+    <title>KoKo And Nge - Chat App</title>
+    
+    <!-- Dark Mode စဖွင့်ချိန် မျက်နှာပြင် ခဏဖြူသွားခြင်းကို ကာကွယ်ရန် script -->
+    <script>
+      if (localStorage.getItem("theme") === "dark") {
+        document.documentElement.classList.add("dark-mode");
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>
