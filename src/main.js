@@ -4,7 +4,8 @@ import { auth, db } from "./firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  onAuthStateChanged
 } from "firebase/auth";
 
 import {
@@ -12,6 +13,7 @@ import {
   setDoc,
   collection,
   addDoc,
+  updateDoc,
   query,
   orderBy,
   onSnapshot,
@@ -40,13 +42,17 @@ document.querySelector("#app").innerHTML = `
     
     <div class="chat-header">
       <div class="user-profile">
-        <div class="avatar">U</div>
+        <div class="avatar" id="user-avatar">U</div>
         <div class="user-status">
           <span id="user-info"></span>
           <span class="status-online">● Online</span>
         </div>
       </div>
-      <button id="logout-btn">❌</button>
+      
+      <div class="header-actions">
+        <button id="theme-toggle" class="icon-btn">🌙</button>
+        <button id="logout-btn">❌</button>
+      </div>
     </div>
     
     <div id="chat-box">
@@ -73,15 +79,19 @@ const msg = document.getElementById("msg");
 const authScreen = document.getElementById("auth-screen");
 const chatScreen = document.getElementById("chat-screen");
 const userInfo = document.getElementById("user-info");
+const userAvatar = document.getElementById("user-avatar");
 const chatBox = document.getElementById("chat-box");
 const messagesList = document.getElementById("messages");
 const chatInput = document.getElementById("chat-input");
 const sendBtn = document.getElementById("send-btn");
 const logoutBtn = document.getElementById("logout-btn");
+const themeToggleBtn = document.getElementById("theme-toggle");
 
 let currentUser = null;
 let firstLoad = true;
+let unsubscribeSnapshot = null;
 
+// --- Notification Logic ---
 if ("Notification" in window && Notification.permission !== "granted") {
   Notification.requestPermission();
 }
@@ -94,6 +104,48 @@ function showNotification(sender, text) {
   }
 }
 
+// --- Dark Mode Logic ---
+if (localStorage.getItem("theme") === "dark") {
+  document.documentElement.classList.add("dark-mode");
+  themeToggleBtn.innerText = "☀️";
+}
+
+themeToggleBtn.onclick = () => {
+  document.documentElement.classList.toggle("dark-mode");
+  if (document.documentElement.classList.contains("dark-mode")) {
+    themeToggleBtn.innerText = "☀️";
+    localStorage.setItem("theme", "dark");
+  } else {
+    themeToggleBtn.innerText = "🌙";
+    localStorage.setItem("theme", "light");
+  }
+};
+
+// --- Auth State Changed ---
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    startChatRoom(user);
+  } else {
+    authScreen.style.display = "flex";
+    chatScreen.style.display = "none";
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+  }
+});
+
+// --- Soft Delete Message Function ---
+window.deleteMessage = async (msgId) => {
+  if (confirm("ဒီစာတိုကို ဖျက်ရန် သေချာပါသလား?")) {
+    try {
+      const msgRef = doc(db, "messages", msgId);
+      await updateDoc(msgRef, {
+        isDeleted: true
+      });
+    } catch (e) {
+      console.error("စာဖျက်ရာတွင် အမှားဖြစ်သည်- ", e);
+    }
+  }
+};
+
 function startChatRoom(user) {
   currentUser = user;
   authScreen.style.display = "none";
@@ -101,42 +153,63 @@ function startChatRoom(user) {
   
   const shortName = user.email.split("@")[0];
   userInfo.innerHTML = `<b>${shortName}</b>`;
+  userAvatar.innerText = shortName.charAt(0).toUpperCase();
 
   const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
   
-  onSnapshot(q, (snapshot) => {if (!firstLoad) {
-    snapshot.docChanges().forEach((change) => {
-  
-      if (change.type === "added") {
-  
-        const data = change.doc.data();
-  
-        if (data.sender !== currentUser.email) {
-  
-          sendNotification(
-            data.sender.split("@")[0],
-            data.text
-          );
-  
+  unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+    if (!firstLoad) {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+          if (data.sender !== currentUser.email) {
+            showNotification(data.sender.split("@")[0], data.text);
+          }
         }
-  
-      }
-  
-    });
-  }
-  
-  firstLoad = false;
+      });
+    }
+    
+    firstLoad = false;
     messagesList.innerHTML = "";
-    snapshot.forEach((doc) => {
-      const data = doc.data();
+    
+    snapshot.forEach((messageDoc) => {
+      const data = messageDoc.data();
+      const msgId = messageDoc.id;
+
+      // စာဖတ်ပြီးကြောင်း (Read/Seen) Update ပြုလုပ်ခြင်း
+      if (!data.readBy?.includes(currentUser.email)) {
+        const msgRef = doc(db, "messages", msgId);
+        updateDoc(msgRef, {
+          readBy: [...(data.readBy || []), currentUser.email]
+        });
+      }
+
       const messageWrapper = document.createElement("div");
       messageWrapper.className = "message-row";
       
       const li = document.createElement("div");
       li.className = "message-bubble";
       
+      // ဖျက်ထားသော စာဖြစ်ပါက
+      if (data.isDeleted) {
+        li.innerHTML = `<i>🚫 ဤစာတိုအား ဖျက်လိုက်ပါပြီ</i>`;
+        li.classList.add("deleted-msg");
+      } else {
+        li.innerText = data.text;
+      }
+
       if (data.sender === currentUser.email) {
         messageWrapper.classList.add("me");
+
+        // မိမိစာဖြစ်ပြီး ဖျက်မထားရသေးပါက Delete Button ပြသခြင်း
+        if (!data.isDeleted) {
+          const delBtn = document.createElement("button");
+          delBtn.className = "del-btn";
+          delBtn.title = "စာဖျက်ရန်";
+          delBtn.innerText = "🗑️";
+          delBtn.onclick = () => window.deleteMessage(msgId);
+          messageWrapper.appendChild(delBtn);
+        }
       } else {
         messageWrapper.classList.add("others");
         const senderName = document.createElement("span");
@@ -145,10 +218,12 @@ function startChatRoom(user) {
         messageWrapper.appendChild(senderName);
       }
 
-      li.innerText = data.text;
       messageWrapper.appendChild(li);
 
-      // --- စာပို့တဲ့ အချိန် (Timestamp) တွက်ချက်ပြသသည့်အပိုင်း ---
+      // --- စာပို့ချိန်နှင့် Seen Status (အမှန်ခြစ်) ---
+      const metaContainer = document.createElement("div");
+      metaContainer.className = "message-meta";
+
       const timeSpan = document.createElement("span");
       timeSpan.className = "message-time";
       
@@ -159,13 +234,25 @@ function startChatRoom(user) {
       } else {
         timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
-      
       timeSpan.innerText = timeString;
-      messageWrapper.appendChild(timeSpan);
-      // ----------------------------------------------------
+      metaContainer.appendChild(timeSpan);
 
+      // မိမိပို့ထားသော စာများအတွက် Seen Status (✓/✓✓) ပြရန်
+      if (data.sender === currentUser.email && !data.isDeleted) {
+        const readStatusSpan = document.createElement("span");
+        readStatusSpan.className = "read-status";
+
+        const isRead = data.readBy && data.readBy.length > 1;
+        readStatusSpan.innerText = isRead ? " ✓✓" : " ✓";
+        if (isRead) readStatusSpan.classList.add("seen");
+
+        metaContainer.appendChild(readStatusSpan);
+      }
+
+      messageWrapper.appendChild(metaContainer);
       messagesList.appendChild(messageWrapper);
     });
+
     chatBox.scrollTop = chatBox.scrollHeight;
   });
 }
@@ -178,7 +265,9 @@ async function handleSendMessage() {
     await addDoc(collection(db, "messages"), {
       text: text,
       sender: currentUser.email,
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
+      readBy: [currentUser.email], // ပို့သူက ဖတ်ပြီးသားအဖြစ် သတ်မှတ်
+      isDeleted: false
     });
     chatInput.value = "";
   } catch (e) {
@@ -200,7 +289,6 @@ document.getElementById("register").onclick = async () => {
       createdAt: new Date()
     });
     msg.innerHTML = "✅ အကောင့်ဖွင့်ခြင်း အောင်မြင်သည်";
-    setTimeout(() => { startChatRoom(userCredential.user); }, 1000);
   } catch (e) {
     msg.innerHTML = "❌ အမှား- " + e.message;
   }
@@ -208,9 +296,8 @@ document.getElementById("register").onclick = async () => {
 
 document.getElementById("login").onclick = async () => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
+    await signInWithEmailAndPassword(auth, email.value, password.value);
     msg.innerHTML = "✅ အကောင့်ဝင်ခြင်း အောင်မြင်သည်";
-    setTimeout(() => { startChatRoom(userCredential.user); }, 1000);
   } catch (e) {
     msg.innerHTML = "❌ အမှား- " + e.message;
   }
@@ -219,8 +306,6 @@ document.getElementById("login").onclick = async () => {
 logoutBtn.onclick = async () => {
   try {
     await signOut(auth);
-    chatScreen.style.display = "none";
-    authScreen.style.display = "block";
     email.value = "";
     password.value = "";
     msg.innerHTML = "👋 အကောင့်ထွက်လိုက်ပါပြီ";
