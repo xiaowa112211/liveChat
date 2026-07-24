@@ -6,18 +6,19 @@
   gap: 8px !important;
   padding: 8px 12px !important;
   box-sizing: border-box !important;
+  width: 100% !important;
 }
 
 /* 📷 Camera Icon Container */
 .image-upload-btn {
-  display: flex !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 22px !important;
+  font-size: 20px !important;
   cursor: pointer !important;
-  min-width: 36px !important;
   width: 36px !important;
   height: 36px !important;
+  min-width: 36px !important;
   border-radius: 50% !important;
   transition: background 0.2s, transform 0.1s !important;
   user-select: none !important;
@@ -35,8 +36,13 @@
 /* စာရိုက်သည့် Box ကို Icon ဘေးမှာ နေရာမျှယူစေခြင်း */
 #chat-input {
   flex: 1 !important; /* ကျန်တဲ့နေရာအကုန် အလိုအလျောက်ယူမည် */
-  width: auto !important; /* width: 100% မပေးရပါ။ auto ပေးမှ ဘေးက icon မတွန်းထုတ်ပါ */
+  width: 0 !important; /* auto အစား 0 ပေးခြင်းက flex item တခြား element တွေကို တွန်းမထုတ်အောင် ပိုမိုခိုင်မာစွာ တားဆီးပေးသည် */
   min-width: 0 !important; /* Container ကျဉ်းသွားပါက Overflow မဖြစ်အောင် တားဆီးပေးသည် */
+}
+
+/* Send Button ကိုလည်း မကျုံ့သွားအောင် ထိန်းပေးခြင်း */
+#send-btn {
+  flex-shrink: 0 !important;
 }
 
 /* Preview Bar (ပုံရွေးပြီးချိန် ပေါ်မည့်နေရာ) */
