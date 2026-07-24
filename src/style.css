@@ -61,3 +61,20 @@ html.dark-mode #image-preview-container {
   color: #94a3b8 !important;
   border-top-color: #334155 !important;
 }
+
+.input-area {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.image-upload-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 22px !important;
+  cursor: pointer !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  user-select: none !important;
+}
