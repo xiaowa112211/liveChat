@@ -1,5 +1,35 @@
-/* --- Image Upload & Display CSS --- */
+/* --- Header Actions & Camera Icon --- */
+.header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
 
+/* Header ထဲရောက်သွားသည့် 📷 Camera Icon Container */
+.image-upload-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  border-radius: 50% !important;
+  transition: background 0.2s, transform 0.1s !important;
+  user-select: none !important;
+  flex-shrink: 0 !important;
+}
+
+.image-upload-btn:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.image-upload-btn:active {
+  transform: scale(0.9) !important;
+}
+
+/* --- Input Area CSS --- */
 .input-area {
   display: flex !important;
   align-items: center !important;
@@ -9,38 +39,18 @@
   width: 100% !important;
 }
 
-/* 📷 Camera Icon Container */
-.image-upload-btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 20px !important;
-  cursor: pointer !important;
-  width: 36px !important;
-  height: 36px !important;
-  min-width: 36px !important;
-  border-radius: 50% !important;
-  transition: background 0.2s, transform 0.1s !important;
-  user-select: none !important;
-  flex-shrink: 0 !important; /* Icon သေးမသွားအောင် ထိန်းပေးသည် */
-}
-
-.image-upload-btn:hover {
-  background-color: #e2e8f0 !important;
-}
-
-.image-upload-btn:active {
-  transform: scale(0.9) !important;
-}
-
-/* စာရိုက်သည့် Box ကို Icon ဘေးမှာ နေရာမျှယူစေခြင်း */
+/* စာရိုက်သည့် Box */
 #chat-input {
-  flex: 1 !important; /* ကျန်တဲ့နေရာအကုန် အလိုအလျောက်ယူမည် */
-  width: 0 !important; /* auto အစား 0 ပေးခြင်းက flex item တခြား element တွေကို တွန်းမထုတ်အောင် ပိုမိုခိုင်မာစွာ တားဆီးပေးသည် */
-  min-width: 0 !important; /* Container ကျဉ်းသွားပါက Overflow မဖြစ်အောင် တားဆီးပေးသည် */
+  flex: 1 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  height: 40px !important;
+  border-radius: 20px !important;
+  padding: 0 16px !important;
+  box-sizing: border-box !important;
 }
 
-/* Send Button ကိုလည်း မကျုံ့သွားအောင် ထိန်းပေးခြင်း */
+/* Send Button */
 #send-btn {
   flex-shrink: 0 !important;
 }
@@ -81,7 +91,7 @@
 
 /* Dark Mode Adjustments for Image UI */
 html.dark-mode .image-upload-btn:hover {
-  background-color: #334155 !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 html.dark-mode #image-preview-container {
