@@ -1,24 +1,27 @@
-import "./style.css";
-import { auth, db } from "./firebase";
+import "./style.css";[cite: 4]
+import { auth, db, storage } from "./firebase"; // <-- storage ထည့်ပါ
 
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from "firebase/auth";
+  createUserWithEmailAndPassword,[cite: 4]
+  signInWithEmailAndPassword,[cite: 4]
+  signOut,[cite: 4]
+  onAuthStateChanged[cite: 4]
+} from "firebase/auth";[cite: 4]
 
 import {
-  doc,
-  setDoc,
-  collection,
-  addDoc,
-  updateDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  serverTimestamp
-} from "firebase/firestore";
+  doc,[cite: 4]
+  setDoc,[cite: 4]
+  collection,[cite: 4]
+  addDoc,[cite: 4]
+  updateDoc,[cite: 4]
+  query,[cite: 4]
+  orderBy,[cite: 4]
+  onSnapshot,[cite: 4]
+  serverTimestamp[cite: 4]
+} from "firebase/firestore";[cite: 4]
+
+// Firebase Storage functions
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 document.querySelector("#app").innerHTML = `
 <div class="chat-app-container">
@@ -59,7 +62,17 @@ document.querySelector("#app").innerHTML = `
       <div id="messages"></div>
     </div>
 
+    <!-- Image Input & Preview Area -->
+    <div id="image-preview-container" style="display: none;">
+      <span id="preview-filename"></span>
+      <button id="cancel-image-btn">✕</button>
+    </div>
+
     <div class="input-area">
+      <!-- ပုံရွေးရန် Button -->
+      <label for="image-input" class="image-upload-btn" title="ပုံပို့ရန်">📷</label>
+      <input id="image-input" type="file" accept="image/*" style="display: none;">
+
       <input id="chat-input" type="text" placeholder="စာတိုရိုက်ပါ...">
       <button id="send-btn">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -72,244 +85,292 @@ document.querySelector("#app").innerHTML = `
 </div>
 `;
 
-const email = document.getElementById("email");
-const password = document.getElementById("password");
-const msg = document.getElementById("msg");
+const email = document.getElementById("email");[cite: 4]
+const password = document.getElementById("password");[cite: 4]
+const msg = document.getElementById("msg");[cite: 4]
 
-const authScreen = document.getElementById("auth-screen");
-const chatScreen = document.getElementById("chat-screen");
-const userInfo = document.getElementById("user-info");
-const userAvatar = document.getElementById("user-avatar");
-const chatBox = document.getElementById("chat-box");
-const messagesList = document.getElementById("messages");
-const chatInput = document.getElementById("chat-input");
-const sendBtn = document.getElementById("send-btn");
-const logoutBtn = document.getElementById("logout-btn");
-const themeToggleBtn = document.getElementById("theme-toggle");
+const authScreen = document.getElementById("auth-screen");[cite: 4]
+const chatScreen = document.getElementById("chat-screen");[cite: 4]
+const userInfo = document.getElementById("user-info");[cite: 4]
+const userAvatar = document.getElementById("user-avatar");[cite: 4]
+const chatBox = document.getElementById("chat-box");[cite: 4]
+const messagesList = document.getElementById("messages");[cite: 4]
+const chatInput = document.getElementById("chat-input");[cite: 4]
+const sendBtn = document.getElementById("send-btn");[cite: 4]
+const logoutBtn = document.getElementById("logout-btn");[cite: 4]
+const themeToggleBtn = document.getElementById("theme-toggle");[cite: 4]
 
-let currentUser = null;
-let firstLoad = true;
-let unsubscribeSnapshot = null;
+const imageInput = document.getElementById("image-input");
+const imagePreviewContainer = document.getElementById("image-preview-container");
+const previewFilename = document.getElementById("preview-filename");
+const cancelImageBtn = document.getElementById("cancel-image-btn");
+
+let currentUser = null;[cite: 4]
+let firstLoad = true;[cite: 4]
+let unsubscribeSnapshot = null;[cite: 4]
+let selectedFile = null;
+
+// Image Selection & Preview
+imageInput.onchange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    selectedFile = file;
+    previewFilename.innerText = `🖼️ ${file.name}`;
+    imagePreviewContainer.style.display = "flex";
+  }
+};
+
+cancelImageBtn.onclick = () => {
+  selectedFile = null;
+  imageInput.value = "";
+  imagePreviewContainer.style.display = "none";
+};
 
 // --- Notification Logic ---
-if ("Notification" in window && Notification.permission !== "granted") {
-  Notification.requestPermission();
+if ("Notification" in window && Notification.permission !== "granted") {[cite: 4]
+  Notification.requestPermission();[cite: 4]
 }
 
-function showNotification(sender, text) {
-  if (Notification.permission === "granted") {
-    new Notification("💬 New Message", {
-      body: `${sender}: ${text}`
-    });
+function showNotification(sender, text) {[cite: 4]
+  if (Notification.permission === "granted") {[cite: 4]
+    new Notification("💬 New Message", {[cite: 4]
+      body: `${sender}: ${text}`[cite: 4]
+    });[cite: 4]
   }
 }
 
 // --- Dark Mode Logic ---
-if (localStorage.getItem("theme") === "dark") {
-  document.documentElement.classList.add("dark-mode");
-  themeToggleBtn.innerText = "☀️";
+if (localStorage.getItem("theme") === "dark") {[cite: 4]
+  document.documentElement.classList.add("dark-mode");[cite: 4]
+  themeToggleBtn.innerText = "☀️";[cite: 4]
 }
 
-themeToggleBtn.onclick = () => {
-  document.documentElement.classList.toggle("dark-mode");
-  if (document.documentElement.classList.contains("dark-mode")) {
-    themeToggleBtn.innerText = "☀️";
-    localStorage.setItem("theme", "dark");
+themeToggleBtn.onclick = () => {[cite: 4]
+  document.documentElement.classList.toggle("dark-mode");[cite: 4]
+  if (document.documentElement.classList.contains("dark-mode")) {[cite: 4]
+    themeToggleBtn.innerText = "☀️";[cite: 4]
+    localStorage.setItem("theme", "dark");[cite: 4]
   } else {
-    themeToggleBtn.innerText = "🌙";
-    localStorage.setItem("theme", "light");
+    themeToggleBtn.innerText = "🌙";[cite: 4]
+    localStorage.setItem("theme", "light");[cite: 4]
   }
 };
 
 // --- Auth State Changed ---
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    startChatRoom(user);
+onAuthStateChanged(auth, (user) => {[cite: 4]
+  if (user) {[cite: 4]
+    startChatRoom(user);[cite: 4]
   } else {
-    authScreen.style.display = "flex";
-    chatScreen.style.display = "none";
-    if (unsubscribeSnapshot) unsubscribeSnapshot();
+    authScreen.style.display = "flex";[cite: 4]
+    chatScreen.style.display = "none";[cite: 4]
+    if (unsubscribeSnapshot) unsubscribeSnapshot();[cite: 4]
   }
 });
 
 // --- Soft Delete Message Function ---
-window.deleteMessage = async (msgId) => {
-  if (confirm("ဒီစာတိုကို ဖျက်ရန် သေချာပါသလား?")) {
+window.deleteMessage = async (msgId) => {[cite: 4]
+  if (confirm("ဒီစာတိုကို ဖျက်ရန် သေချာပါသလား?")) {[cite: 4]
     try {
-      const msgRef = doc(db, "messages", msgId);
-      await updateDoc(msgRef, {
-        isDeleted: true
+      const msgRef = doc(db, "messages", msgId);[cite: 4]
+      await updateDoc(msgRef, {[cite: 4]
+        isDeleted: true[cite: 4]
       });
     } catch (e) {
-      console.error("စာဖျက်ရာတွင် အမှားဖြစ်သည်- ", e);
+      console.error("စာဖျက်ရာတွင် အမှားဖြစ်သည်- ", e);[cite: 4]
     }
   }
 };
 
-function startChatRoom(user) {
-  currentUser = user;
-  authScreen.style.display = "none";
-  chatScreen.style.display = "flex";
+function startChatRoom(user) {[cite: 4]
+  currentUser = user;[cite: 4]
+  authScreen.style.display = "none";[cite: 4]
+  chatScreen.style.display = "flex";[cite: 4]
   
-  const shortName = user.email.split("@")[0];
-  userInfo.innerHTML = `<b>${shortName}</b>`;
-  userAvatar.innerText = shortName.charAt(0).toUpperCase();
+  const shortName = user.email.split("@")[0];[cite: 4]
+  userInfo.innerHTML = `<b>${shortName}</b>`;[cite: 4]
+  userAvatar.innerText = shortName.charAt(0).toUpperCase();[cite: 4]
 
-  const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
+  const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));[cite: 4]
   
-  unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-    if (!firstLoad) {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const data = change.doc.data();
-          if (data.sender !== currentUser.email) {
-            showNotification(data.sender.split("@")[0], data.text);
+  unsubscribeSnapshot = onSnapshot(q, (snapshot) => {[cite: 4]
+    if (!firstLoad) {[cite: 4]
+      snapshot.docChanges().forEach((change) => {[cite: 4]
+        if (change.type === "added") {[cite: 4]
+          const data = change.doc.data();[cite: 4]
+          if (data.sender !== currentUser.email) {[cite: 4]
+            showNotification(data.sender.split("@")[0], data.imageUrl ? "[Image]" : data.text);[cite: 4]
           }
         }
       });
     }
     
-    firstLoad = false;
-    messagesList.innerHTML = "";
+    firstLoad = false;[cite: 4]
+    messagesList.innerHTML = "";[cite: 4]
     
-    snapshot.forEach((messageDoc) => {
-      const data = messageDoc.data();
-      const msgId = messageDoc.id;
+    snapshot.forEach((messageDoc) => {[cite: 4]
+      const data = messageDoc.data();[cite: 4]
+      const msgId = messageDoc.id;[cite: 4]
 
-      // စာဖတ်ပြီးကြောင်း (Read/Seen) Update ပြုလုပ်ခြင်း
-      if (!data.readBy?.includes(currentUser.email)) {
-        const msgRef = doc(db, "messages", msgId);
-        updateDoc(msgRef, {
-          readBy: [...(data.readBy || []), currentUser.email]
+      if (!data.readBy?.includes(currentUser.email)) {[cite: 4]
+        const msgRef = doc(db, "messages", msgId);[cite: 4]
+        updateDoc(msgRef, {[cite: 4]
+          readBy: [...(data.readBy || []), currentUser.email][cite: 4]
         });
       }
 
-      const messageWrapper = document.createElement("div");
-      messageWrapper.className = "message-row";
+      const messageWrapper = document.createElement("div");[cite: 4]
+      messageWrapper.className = "message-row";[cite: 4]
       
-      const li = document.createElement("div");
-      li.className = "message-bubble";
+      const li = document.createElement("div");[cite: 4]
+      li.className = "message-bubble";[cite: 4]
       
-      // ဖျက်ထားသော စာဖြစ်ပါက
-      if (data.isDeleted) {
-        li.innerHTML = `<i>🚫 ဤစာတိုအား ဖျက်လိုက်ပါပြီ</i>`;
-        li.classList.add("deleted-msg");
+      if (data.isDeleted) {[cite: 4]
+        li.innerHTML = `<i>🚫 ဤစာတိုအား ဖျက်လိုက်ပါပြီ</i>`;[cite: 4]
+        li.classList.add("deleted-msg");[cite: 4]
       } else {
-        li.innerText = data.text;
+        // စာပါရင် စာပြမည်
+        if (data.text) {
+          const textDiv = document.createElement("div");
+          textDiv.innerText = data.text;
+          li.appendChild(textDiv);
+        }
+        // ပုံပါရင် ပုံပြမည်
+        if (data.imageUrl) {
+          const img = document.createElement("img");
+          img.src = data.imageUrl;
+          img.className = "chat-media-img";
+          img.alt = "Chat image";
+          img.onclick = () => window.open(data.imageUrl, "_blank"); // နှိပ်ရင် ပုံအကျယ်ကြည့်ရန်
+          li.appendChild(img);
+        }
       }
 
-      if (data.sender === currentUser.email) {
-        messageWrapper.classList.add("me");
+      if (data.sender === currentUser.email) {[cite: 4]
+        messageWrapper.classList.add("me");[cite: 4]
 
-        // မိမိစာဖြစ်ပြီး ဖျက်မထားရသေးပါက Delete Button ပြသခြင်း
-        if (!data.isDeleted) {
-          const delBtn = document.createElement("button");
-          delBtn.className = "del-btn";
-          delBtn.title = "စာဖျက်ရန်";
-          delBtn.innerText = "🗑️";
-          delBtn.onclick = () => window.deleteMessage(msgId);
-          messageWrapper.appendChild(delBtn);
+        if (!data.isDeleted) {[cite: 4]
+          const delBtn = document.createElement("button");[cite: 4]
+          delBtn.className = "del-btn";[cite: 4]
+          delBtn.title = "စာဖျက်ရန်";[cite: 4]
+          delBtn.innerText = "🗑️";[cite: 4]
+          delBtn.onclick = () => window.deleteMessage(msgId);[cite: 4]
+          messageWrapper.appendChild(delBtn);[cite: 4]
         }
       } else {
-        messageWrapper.classList.add("others");
-        const senderName = document.createElement("span");
-        senderName.className = "sender-name";
-        senderName.innerText = data.sender.split("@")[0];
-        messageWrapper.appendChild(senderName);
+        messageWrapper.classList.add("others");[cite: 4]
+        const senderName = document.createElement("span");[cite: 4]
+        senderName.className = "sender-name";[cite: 4]
+        senderName.innerText = data.sender.split("@")[0];[cite: 4]
+        messageWrapper.appendChild(senderName);[cite: 4]
       }
 
-      messageWrapper.appendChild(li);
+      messageWrapper.appendChild(li);[cite: 4]
 
-      // --- စာပို့ချိန်နှင့် Seen Status (အမှန်ခြစ်) ---
-      const metaContainer = document.createElement("div");
-      metaContainer.className = "message-meta";
+      const metaContainer = document.createElement("div");[cite: 4]
+      metaContainer.className = "message-meta";[cite: 4]
 
-      const timeSpan = document.createElement("span");
-      timeSpan.className = "message-time";
+      const timeSpan = document.createElement("span");[cite: 4]
+      timeSpan.className = "message-time";[cite: 4]
       
-      let timeString = "";
-      if (data.createdAt) {
-        const date = data.createdAt.toDate();
-        timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      let timeString = "";[cite: 4]
+      if (data.createdAt) {[cite: 4]
+        const date = data.createdAt.toDate();[cite: 4]
+        timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });[cite: 4]
       } else {
-        timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });[cite: 4]
       }
-      timeSpan.innerText = timeString;
-      metaContainer.appendChild(timeSpan);
+      timeSpan.innerText = timeString;[cite: 4]
+      metaContainer.appendChild(timeSpan);[cite: 4]
 
-      // မိမိပို့ထားသော စာများအတွက် Seen Status (✓/✓✓) ပြရန်
-      if (data.sender === currentUser.email && !data.isDeleted) {
-        const readStatusSpan = document.createElement("span");
-        readStatusSpan.className = "read-status";
+      if (data.sender === currentUser.email && !data.isDeleted) {[cite: 4]
+        const readStatusSpan = document.createElement("span");[cite: 4]
+        readStatusSpan.className = "read-status";[cite: 4]
 
-        const isRead = data.readBy && data.readBy.length > 1;
-        readStatusSpan.innerText = isRead ? " ✓✓" : " ✓";
-        if (isRead) readStatusSpan.classList.add("seen");
+        const isRead = data.readBy && data.readBy.length > 1;[cite: 4]
+        readStatusSpan.innerText = isRead ? " ✓✓" : " ✓";[cite: 4]
+        if (isRead) readStatusSpan.classList.add("seen");[cite: 4]
 
-        metaContainer.appendChild(readStatusSpan);
+        metaContainer.appendChild(readStatusSpan);[cite: 4]
       }
 
-      messageWrapper.appendChild(metaContainer);
-      messagesList.appendChild(messageWrapper);
+      messageWrapper.appendChild(metaContainer);[cite: 4]
+      messagesList.appendChild(messageWrapper);[cite: 4]
     });
 
-    chatBox.scrollTop = chatBox.scrollHeight;
+    chatBox.scrollTop = chatBox.scrollHeight;[cite: 4]
   });
 }
 
 async function handleSendMessage() {
   const text = chatInput.value.trim();
-  if (text === "") return;
+  if (text === "" && !selectedFile) return;
+
+  sendBtn.disabled = true;
+  let imageUrl = null;
 
   try {
+    // ပုံပါပါက Firebase Storage သို့ Upload တင်ခြင်း
+    if (selectedFile) {
+      const storageRef = ref(storage, `chat_images/${currentUser.uid}/${Date.now()}_${selectedFile.name}`);
+      const snapshot = await uploadBytes(storageRef, selectedFile);
+      imageUrl = await getDownloadURL(snapshot.ref);
+    }
+
+    // Firestore ထဲ Message Data သိမ်းခြင်း
     await addDoc(collection(db, "messages"), {
       text: text,
+      imageUrl: imageUrl,
       sender: currentUser.email,
       createdAt: serverTimestamp(),
-      readBy: [currentUser.email], // ပို့သူက ဖတ်ပြီးသားအဖြစ် သတ်မှတ်
+      readBy: [currentUser.email],
       isDeleted: false
     });
+
+    // Reset Inputs
     chatInput.value = "";
+    cancelImageBtn.click();
   } catch (e) {
-    console.error("စာပို့မရပါ- ", e);
+    console.error("စာ/ပုံ ပို့မရပါ- ", e);
+  } finally {
+    sendBtn.disabled = false;
   }
 }
 
-sendBtn.onclick = handleSendMessage;
-chatInput.onkeypress = (e) => {
-  if (e.key === "Enter") handleSendMessage();
+sendBtn.onclick = handleSendMessage;[cite: 4]
+chatInput.onkeypress = (e) => {[cite: 4]
+  if (e.key === "Enter") handleSendMessage();[cite: 4]
 };
 
-document.getElementById("register").onclick = async () => {
+document.getElementById("register").onclick = async () => {[cite: 4]
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value);
-    await setDoc(doc(db, "users", userCredential.user.uid), {
-      uid: userCredential.user.uid,
-      email: email.value,
-      createdAt: new Date()
+    const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value);[cite: 4]
+    await setDoc(doc(db, "users", userCredential.user.uid), {[cite: 4]
+      uid: userCredential.user.uid,[cite: 4]
+      email: email.value,[cite: 4]
+      createdAt: new Date()[cite: 4]
     });
-    msg.innerHTML = "✅ အကောင့်ဖွင့်ခြင်း အောင်မြင်သည်";
+    msg.innerHTML = "✅ အကောင့်ဖွင့်ခြင်း အောင်မြင်သည်";[cite: 4]
   } catch (e) {
-    msg.innerHTML = "❌ အမှား- " + e.message;
+    msg.innerHTML = "❌ အမှား- " + e.message;[cite: 4]
   }
 };
 
-document.getElementById("login").onclick = async () => {
+document.getElementById("login").onclick = async () => {[cite: 4]
   try {
-    await signInWithEmailAndPassword(auth, email.value, password.value);
-    msg.innerHTML = "✅ အကောင့်ဝင်ခြင်း အောင်မြင်သည်";
+    await signInWithEmailAndPassword(auth, email.value, password.value);[cite: 4]
+    msg.innerHTML = "✅ အကောင့်ဝင်ခြင်း အောင်မြင်သည်";[cite: 4]
   } catch (e) {
-    msg.innerHTML = "❌ အမှား- " + e.message;
+    msg.innerHTML = "❌ အမှား- " + e.message;[cite: 4]
   }
 };
 
-logoutBtn.onclick = async () => {
+logoutBtn.onclick = async () => {[cite: 4]
   try {
-    await signOut(auth);
-    email.value = "";
-    password.value = "";
-    msg.innerHTML = "👋 အကောင့်ထွက်လိုက်ပါပြီ";
+    await signOut(auth);[cite: 4]
+    email.value = "";[cite: 4]
+    password.value = "";[cite: 4]
+    msg.innerHTML = "👋 အကောင့်ထွက်လိုက်ပါပြီ";[cite: 4]
   } catch (e) {
-    console.error("Logout Error: ", e);
+    console.error("Logout Error: ", e);[cite: 4]
   }
 };
